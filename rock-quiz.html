@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Legends Quiz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --queen-gold: #FFD700;
+    --queen-dark: #1a0a2e;
+    --beatles-red: #E8001C;
+    --beatles-dark: #0a1a2e;
+    --correct: #2ecc71;
+    --wrong: #e74c3c;
+    --neutral: #f0f0f0;
+    --text-dark: #1a1a2e;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a0a2e 0%, #0a1a2e 50%, #1a0a1a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 540px;
+  }
+
+  /* SCREEN MANAGEMENT */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* TITLE SCREEN */
+  #title-screen {
+    text-align: center;
+  }
+
+  .title-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .title-main {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(42px, 10vw, 64px);
+    line-height: 1;
+    color: white;
+    text-shadow: 0 0 30px rgba(255,215,0,0.5);
+    margin-bottom: 6px;
+  }
+
+  .title-sub {
+    font-size: 16px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 32px;
+    font-weight: 700;
+  }
+
+  .band-icons {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 36px;
+  }
+
+  .band-icon {
+    width: 110px;
+    height: 110px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 3px solid transparent;
+  }
+
+  .band-icon:hover { transform: scale(1.05); }
+
+  .band-icon .icon-emoji { font-size: 40px; margin-bottom: 6px; }
+
+  .queen-icon {
+    background: linear-gradient(135deg, #2a1a4e, #3d2070);
+    border-color: var(--queen-gold);
+    color: var(--queen-gold);
+    box-shadow: 0 0 20px rgba(255,215,0,0.3);
+  }
+
+  .beatles-icon {
+    background: linear-gradient(135deg, #1a0a0a, #3d0a0a);
+    border-color: var(--beatles-red);
+    color: var(--beatles-red);
+    box-shadow: 0 0 20px rgba(232,0,28,0.3);
+  }
+
+  .mode-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  .start-btn {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    font-family: 'Fredoka One', cursive;
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    color: var(--text-dark);
+    background: linear-gradient(135deg, var(--queen-gold), #FFA500);
+    box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+    margin-bottom: 12px;
+  }
+
+  .start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,215,0,0.5); }
+  .start-btn:active { transform: translateY(0); }
+
+  .start-btn.beatles-btn {
+    background: linear-gradient(135deg, var(--beatles-red), #a00015);
+    color: white;
+    box-shadow: 0 4px 20px rgba(232,0,28,0.4);
+  }
+
+  .start-btn.beatles-btn:hover { box-shadow: 0 8px 28px rgba(232,0,28,0.5); }
+
+  .start-btn.mixed-btn {
+    background: linear-gradient(135deg, #7b2ff7, #e040fb);
+    color: white;
+    box-shadow: 0 4px 20px rgba(123,47,247,0.4);
+  }
+
+  /* QUIZ SCREEN */
+  #quiz-screen {
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .band-tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .band-tag.queen { background: rgba(255,215,0,0.15); color: var(--queen-gold); border: 1px solid rgba(255,215,0,0.4); }
+  .band-tag.beatles { background: rgba(232,0,28,0.15); color: #ff4d4d; border: 1px solid rgba(232,0,28,0.4); }
+  .band-tag.mixed { background: rgba(180,100,255,0.15); color: #d080ff; border: 1px solid rgba(180,100,255,0.4); }
+
+  .score-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    color: white;
+  }
+
+  .score-display span { color: var(--queen-gold); }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 8px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--queen-gold), #FFA500);
+    transition: width 0.4s ease;
+  }
+
+  .question-num {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .question-card {
+    background: rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .question-category {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    opacity: 0.6;
+    color: white;
+  }
+
+  .question-text {
+    font-size: clamp(17px, 4vw, 22px);
+    font-weight: 800;
+    color: white;
+    line-height: 1.3;
+  }
+
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .answer-btn {
+    padding: 16px 12px;
+    border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.07);
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(14px, 3.5vw, 17px);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.3;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .answer-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.4);
+    transform: scale(1.02);
+  }
+
+  .answer-btn:active:not(:disabled) { transform: scale(0.98); }
+
+  .answer-btn.correct {
+    background: rgba(46,204,113,0.25);
+    border-color: var(--correct);
+    color: #afffcf;
+    animation: pop 0.3s ease;
+  }
+
+  .answer-btn.wrong {
+    background: rgba(231,76,60,0.25);
+    border-color: var(--wrong);
+    color: #ffaaaa;
+  }
+
+  .answer-btn.reveal {
+    background: rgba(46,204,113,0.15);
+    border-color: rgba(46,204,113,0.5);
+    color: rgba(175,255,207,0.7);
+  }
+
+  .answer-btn:disabled { cursor: default; }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  .feedback-area {
+    margin-top: 16px;
+    min-height: 48px;
+    text-align: center;
+  }
+
+  .feedback-text {
+    font-size: 18px;
+    font-weight: 800;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .feedback-text.show { opacity: 1; }
+  .feedback-text.correct-fb { color: #2ecc71; }
+  .feedback-text.wrong-fb { color: #e74c3c; }
+
+  .next-btn {
+    display: none;
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.15s;
+    background: linear-gradient(135deg, #7b2ff7, #e040fb);
+    color: white;
+    box-shadow: 0 4px 16px rgba(123,47,247,0.4);
+  }
+
+  .next-btn:hover { transform: translateY(-2px); }
+  .next-btn.visible { display: block; animation: fadeIn 0.2s ease; }
+
+  /* RESULTS SCREEN */
+  #results-screen {
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .results-emoji { font-size: 72px; margin-bottom: 12px; }
+
+  .results-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 42px;
+    color: white;
+    margin-bottom: 8px;
+  }
+
+  .results-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 64px;
+    color: var(--queen-gold);
+    margin-bottom: 4px;
+    text-shadow: 0 0 20px rgba(255,215,0,0.5);
+  }
+
+  .results-out-of {
+    font-size: 18px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 24px;
+    font-weight: 700;
+  }
+
+  .results-msg {
+    font-size: 18px;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 32px;
+    font-weight: 700;
+    padding: 0 16px;
+    line-height: 1.4;
+  }
+
+  .replay-btn {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    font-family: 'Fredoka One', cursive;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-dark);
+    background: linear-gradient(135deg, var(--queen-gold), #FFA500);
+    box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+    margin-bottom: 12px;
+  }
+
+  .replay-btn:hover { transform: translateY(-2px); }
+
+  .home-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: transparent;
+    font-family: 'Fredoka One', cursive;
+    font-size: 20px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.7);
+    transition: all 0.15s;
+  }
+
+  .home-btn:hover { border-color: rgba(255,255,255,0.5); color: white; }
+
+  .stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    font-size: 36px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TITLE SCREEN -->
+  <div id="title-screen" class="screen active">
+    <div class="title-badge" style="background:rgba(255,215,0,0.15);color:#FFD700;border:1px solid rgba(255,215,0,0.3);">🎸 Music Trivia</div>
+    <div class="title-main">Rock<br>Legends</div>
+    <div class="title-sub">Queen &amp; The Beatles</div>
+
+    <div class="band-icons">
+      <div class="band-icon queen-icon">
+        <div class="icon-emoji">👑</div>
+        Queen
+      </div>
+      <div class="band-icon beatles-icon">
+        <div class="icon-emoji">🍎</div>
+        Beatles
+      </div>
+    </div>
+
+    <div class="mode-label">Choose a mode</div>
+    <button class="start-btn" onclick="startGame('queen')">👑 Queen Only</button>
+    <button class="start-btn beatles-btn" onclick="startGame('beatles')">🍎 Beatles Only</button>
+    <button class="start-btn mixed-btn" onclick="startGame('mixed')">🎸 Both Bands!</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz-screen" class="screen">
+    <div class="quiz-header">
+      <div class="band-tag" id="band-tag">Queen</div>
+      <div class="score-display">⭐ <span id="score-num">0</span></div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="question-num" id="question-num">Question 1 of 15</div>
+    <div class="question-card">
+      <div class="question-category" id="q-category">Songwriting</div>
+      <div class="question-text" id="q-text">Loading...</div>
+    </div>
+    <div class="answers-grid" id="answers-grid"></div>
+    <div class="feedback-area">
+      <div class="feedback-text" id="feedback-text"></div>
+    </div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next ➜</button>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="results-screen" class="screen">
+    <div class="results-emoji" id="results-emoji">🏆</div>
+    <div class="stars" id="results-stars"></div>
+    <div class="results-title" id="results-title">Amazing!</div>
+    <div class="results-score" id="results-score">15/15</div>
+    <div class="results-out-of" id="results-out-of">correct answers</div>
+    <div class="results-msg" id="results-msg">You really know your rock legends!</div>
+    <button class="replay-btn" id="replay-btn" onclick="replayGame()">🔄 Play Again</button>
+    <button class="home-btn" onclick="goHome()">🏠 Home</button>
+  </div>
+
+</div>
+
+<script>
+// =====================================================================
+// QUESTION BANK — all facts verified against official credits / Britannica
+// Categories: songwriter, instrument, bandmember, fact, whichband
+// =====================================================================
+
+const QUESTIONS = {
+  queen: [
+    // --- SONGWRITING ---
+    { cat:"Who wrote it?", q:"Who wrote 'Bohemian Rhapsody'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'We Will Rock You'?", a:"Brian May", wrong:["Freddie Mercury","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'We Are the Champions'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Another One Bites the Dust'?", a:"John Deacon", wrong:["Freddie Mercury","Brian May","Roger Taylor"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Killer Queen'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Radio Ga Ga'?", a:"Roger Taylor", wrong:["Freddie Mercury","Brian May","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Somebody to Love'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Don't Stop Me Now'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Love of My Life'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Crazy Little Thing Called Love'?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'I Want to Break Free'?", a:"John Deacon", wrong:["Freddie Mercury","Brian May","Roger Taylor"] },
+    { cat:"Who wrote it?", q:"Who wrote 'You're My Best Friend'?", a:"John Deacon", wrong:["Freddie Mercury","Brian May","Roger Taylor"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Tie Your Mother Down'?", a:"Brian May", wrong:["Freddie Mercury","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Fat Bottomed Girls'?", a:"Brian May", wrong:["Freddie Mercury","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Hammer to Fall'?", a:"Brian May", wrong:["Freddie Mercury","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'The Show Must Go On'?", a:"Brian May", wrong:["Freddie Mercury","Roger Taylor","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'A Kind of Magic'?", a:"Roger Taylor", wrong:["Freddie Mercury","Brian May","John Deacon"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Flash'?", a:"Brian May", wrong:["Freddie Mercury","Roger Taylor","John Deacon"] },
+    // --- INSTRUMENTS ---
+    { cat:"Instruments", q:"What instrument did Freddie Mercury play on stage?", a:"Piano & vocals", wrong:["Guitar","Drums","Bass guitar"] },
+    { cat:"Instruments", q:"What instrument did Brian May play?", a:"Lead guitar", wrong:["Drums","Bass guitar","Piano"] },
+    { cat:"Instruments", q:"What instrument did Roger Taylor play?", a:"Drums", wrong:["Guitar","Bass guitar","Piano"] },
+    { cat:"Instruments", q:"What instrument did John Deacon play?", a:"Bass guitar", wrong:["Lead guitar","Drums","Piano"] },
+    // --- BAND FACTS ---
+    { cat:"Band facts", q:"What was Freddie Mercury's real first name?", a:"Farrokh", wrong:["Frederick","Frank","Ferdinand"] },
+    { cat:"Band facts", q:"Who was the oldest member of Queen?", a:"Freddie Mercury", wrong:["Brian May","Roger Taylor","John Deacon"] },
+    { cat:"Band facts", q:"Who was the youngest member of Queen?", a:"John Deacon", wrong:["Freddie Mercury","Brian May","Roger Taylor"] },
+    { cat:"Band facts", q:"How many members were in Queen?", a:"4", wrong:["3","5","6"] },
+    { cat:"Band facts", q:"What country was Queen from?", a:"England", wrong:["USA","Australia","Ireland"] },
+    { cat:"Band facts", q:"What was Brian May's famous home-built guitar called?", a:"The Red Special", wrong:["The Black Beauty","The Golden Axe","The Thunder Guitar"] },
+    { cat:"Band facts", q:"What year did Freddie Mercury die?", a:"1991", wrong:["1995","1986","2001"] },
+    { cat:"Band facts", q:"Who replaced Freddie Mercury as Queen's live singer?", a:"Adam Lambert", wrong:["Paul McCartney","Roger Daltrey","David Bowie"] },
+    { cat:"Band facts", q:"Which Queen member has a PhD in astrophysics?", a:"Brian May", wrong:["Roger Taylor","John Deacon","Freddie Mercury"] },
+    { cat:"Band facts", q:"Queen's song 'Bohemian Rhapsody' is how long?", a:"Nearly 6 minutes", wrong:["2 minutes","10 minutes","3 minutes"] },
+    { cat:"Band facts", q:"Where was Freddie Mercury born?", a:"Zanzibar (Tanzania)", wrong:["London","Liverpool","India"] },
+  ],
+
+  beatles: [
+    // --- SONGWRITING ---
+    { cat:"Who wrote it?", q:"Who wrote 'Yesterday'?", a:"Paul McCartney", wrong:["John Lennon","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Let It Be'?", a:"Paul McCartney", wrong:["John Lennon","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Hey Jude'?", a:"Paul McCartney", wrong:["John Lennon","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Come Together'?", a:"John Lennon", wrong:["Paul McCartney","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Imagine' (solo)?", a:"John Lennon", wrong:["Paul McCartney","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Here Comes the Sun'?", a:"George Harrison", wrong:["Paul McCartney","John Lennon","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Something'?", a:"George Harrison", wrong:["Paul McCartney","John Lennon","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'While My Guitar Gently Weeps'?", a:"George Harrison", wrong:["Paul McCartney","John Lennon","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Don't Pass Me By'?", a:"Ringo Starr", wrong:["Paul McCartney","John Lennon","George Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'In My Life'?", a:"Lennon & McCartney", wrong:["Harrison & Starr","McCartney & Harrison","Lennon & Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'A Hard Day's Night'?", a:"Lennon & McCartney", wrong:["Harrison & Starr","McCartney & Harrison","Lennon & Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Help!'?", a:"Lennon & McCartney", wrong:["Harrison & Starr","McCartney & Harrison","Lennon & Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'She Loves You'?", a:"Lennon & McCartney", wrong:["Harrison & Starr","McCartney & Harrison","Lennon & Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Love Me Do'?", a:"Lennon & McCartney", wrong:["Harrison & Starr","McCartney & Harrison","Lennon & Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Twist and Shout' (original)?", a:"Bert Russell & Phil Medley", wrong:["Lennon & McCartney","Harrison & Starr","McCartney & Harrison"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Strawberry Fields Forever'?", a:"John Lennon", wrong:["Paul McCartney","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Penny Lane'?", a:"Paul McCartney", wrong:["John Lennon","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Blackbird'?", a:"Paul McCartney", wrong:["John Lennon","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Eleanor Rigby' (main credit)?", a:"Paul McCartney", wrong:["John Lennon","George Harrison","Ringo Starr"] },
+    { cat:"Who wrote it?", q:"Who wrote 'Norwegian Wood'?", a:"John Lennon", wrong:["Paul McCartney","George Harrison","Ringo Starr"] },
+    // --- INSTRUMENTS ---
+    { cat:"Instruments", q:"What instrument did Ringo Starr play?", a:"Drums", wrong:["Bass guitar","Lead guitar","Piano"] },
+    { cat:"Instruments", q:"What instrument did Paul McCartney mainly play?", a:"Bass guitar", wrong:["Lead guitar","Drums","Piano"] },
+    { cat:"Instruments", q:"What instrument did George Harrison mainly play?", a:"Lead guitar", wrong:["Bass guitar","Drums","Piano"] },
+    { cat:"Instruments", q:"What instrument did John Lennon mainly play?", a:"Rhythm guitar", wrong:["Bass guitar","Drums","Piano"] },
+    { cat:"Instruments", q:"Paul McCartney also played this keyboard instrument.", a:"Piano", wrong:["Drums","Bass","Sitar"] },
+    { cat:"Instruments", q:"George Harrison famously played this Indian instrument.", a:"Sitar", wrong:["Tabla","Sarod","Veena"] },
+    // --- BAND FACTS ---
+    { cat:"Band facts", q:"What was Ringo Starr's real name?", a:"Richard Starkey", wrong:["Richard Ringo","Robert Starkey","Ronald Starr"] },
+    { cat:"Band facts", q:"Who was the oldest Beatle?", a:"Ringo Starr", wrong:["John Lennon","Paul McCartney","George Harrison"] },
+    { cat:"Band facts", q:"Who was the youngest Beatle?", a:"George Harrison", wrong:["Paul McCartney","John Lennon","Ringo Starr"] },
+    { cat:"Band facts", q:"What city were The Beatles from?", a:"Liverpool", wrong:["London","Manchester","Birmingham"] },
+    { cat:"Band facts", q:"How many members were in The Beatles?", a:"4", wrong:["3","5","6"] },
+    { cat:"Band facts", q:"What was the name of The Beatles' record label?", a:"Apple Records", wrong:["EMI Direct","Parlophone Plus","Decca Records"] },
+    { cat:"Band facts", q:"Which Beatle was the drummer before Ringo?", a:"Pete Best", wrong:["Stuart Sutcliffe","Andy White","Tommy Moore"] },
+    { cat:"Band facts", q:"What year did The Beatles break up?", a:"1970", wrong:["1965","1968","1972"] },
+    { cat:"Band facts", q:"Which two Beatles are still alive today?", a:"Paul & Ringo", wrong:["John & George","Paul & George","John & Ringo"] },
+    { cat:"Band facts", q:"The Beatles appeared on which famous US TV show in 1964?", a:"The Ed Sullivan Show", wrong:["The Tonight Show","American Bandstand","The Johnny Carson Show"] },
+    { cat:"Band facts", q:"What was the name of The Beatles' famous manager?", a:"Brian Epstein", wrong:["George Martin","Allen Klein","Phil Spector"] },
+    { cat:"Band facts", q:"Who produced most of The Beatles' records?", a:"George Martin", wrong:["Brian Epstein","Phil Spector","Geoff Emerick"] },
+  ]
+};
+
+// Build mixed pool
+QUESTIONS.mixed = [...QUESTIONS.queen, ...QUESTIONS.beatles];
+
+// Tag each question with its band
+QUESTIONS.queen.forEach(q => q.band = 'queen');
+QUESTIONS.beatles.forEach(q => q.band = 'beatles');
+QUESTIONS.mixed.forEach(q => { if (!q.band) q.band = 'mixed'; });
+
+// =====================================================================
+// GAME STATE
+// =====================================================================
+let mode = 'mixed';
+let questions = [];
+let currentIndex = 0;
+let score = 0;
+let answered = false;
+const TOTAL_QUESTIONS = 15;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame(selectedMode) {
+  mode = selectedMode;
+  const pool = shuffle(QUESTIONS[mode]);
+  questions = pool.slice(0, TOTAL_QUESTIONS);
+  currentIndex = 0;
+  score = 0;
+  showScreen('quiz-screen');
+  loadQuestion();
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = questions[currentIndex];
+  const total = questions.length;
+
+  // Header
+  const tag = document.getElementById('band-tag');
+  if (mode === 'mixed') {
+    tag.className = 'band-tag ' + (q.band === 'queen' ? 'queen' : 'beatles');
+    tag.textContent = q.band === 'queen' ? '👑 Queen' : '🍎 Beatles';
+  } else {
+    tag.className = 'band-tag ' + mode;
+    tag.textContent = mode === 'queen' ? '👑 Queen' : '🍎 Beatles';
+  }
+
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('question-num').textContent = `Question ${currentIndex + 1} of ${total}`;
+  document.getElementById('progress-bar').style.width = `${(currentIndex / total) * 100}%`;
+  document.getElementById('q-category').textContent = q.cat;
+  document.getElementById('q-text').textContent = q.q;
+
+  // Build shuffled answers
+  const options = shuffle([q.a, ...q.wrong.slice(0, 3)]);
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(btn, opt, q.a);
+    grid.appendChild(btn);
+  });
+
+  // Reset feedback
+  const fb = document.getElementById('feedback-text');
+  fb.textContent = '';
+  fb.className = 'feedback-text';
+  document.getElementById('next-btn').className = 'next-btn';
+}
+
+function selectAnswer(btn, chosen, correct) {
+  if (answered) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.answer-btn');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add(chosen === correct ? 'correct' : 'reveal');
+  });
+
+  const fb = document.getElementById('feedback-text');
+
+  if (chosen === correct) {
+    score++;
+    document.getElementById('score-num').textContent = score;
+    btn.classList.add('correct');
+    fb.textContent = pickRandom(['🎉 Correct!', '⭐ Brilliant!', '🔥 Rock star!', '👑 Nailed it!', '🎸 Awesome!']);
+    fb.className = 'feedback-text correct-fb show';
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = `❌ It was: ${correct}`;
+    fb.className = 'feedback-text wrong-fb show';
+  }
+
+  document.getElementById('next-btn').className = 'next-btn visible';
+}
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= questions.length) {
+    showResults();
+  } else {
+    loadQuestion();
+    // Reset scroll
+    document.getElementById('quiz-screen').scrollTop = 0;
+  }
+}
+
+function showResults() {
+  showScreen('results-screen');
+  const total = questions.length;
+  const pct = score / total;
+
+  let emoji, title, msg, stars;
+  if (pct === 1) {
+    emoji = '🏆'; title = 'Perfect Score!'; stars = '⭐⭐⭐';
+    msg = 'You got every single one right. You really know your rock legends!';
+  } else if (pct >= 0.8) {
+    emoji = '🎸'; title = 'Rock Star!'; stars = '⭐⭐⭐';
+    msg = 'Amazing result. You know your Queen and Beatles really well!';
+  } else if (pct >= 0.6) {
+    emoji = '🎵'; title = 'Great Job!'; stars = '⭐⭐';
+    msg = 'Really good! A bit more listening and you\'ll be a legend yourself.';
+  } else if (pct >= 0.4) {
+    emoji = '🎤'; title = 'Keep Rocking!'; stars = '⭐';
+    msg = 'Not bad! Play again and see how many more you can get right.';
+  } else {
+    emoji = '🎼'; title = 'Keep Going!'; stars = '⭐';
+    msg = 'Time to listen to some more Queen and Beatles! You\'ll do better next time.';
+  }
+
+  document.getElementById('results-emoji').textContent = emoji;
+  document.getElementById('results-title').textContent = title;
+  document.getElementById('results-stars').textContent = stars;
+  document.getElementById('results-score').textContent = `${score}/${total}`;
+  document.getElementById('results-msg').textContent = msg;
+
+  const replayBtn = document.getElementById('replay-btn');
+  replayBtn.textContent = mode === 'queen' ? '👑 Play Again' : mode === 'beatles' ? '🍎 Play Again' : '🎸 Play Again';
+}
+
+function replayGame() { startGame(mode); }
+function goHome() { showScreen('title-screen'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
